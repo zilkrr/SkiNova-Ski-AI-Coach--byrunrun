@@ -1,0 +1,2623 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SkiNova Keep-Style Prototype</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+    :root {
+      --bg: #0a0a0c;
+      --aurora-green: #2eff88;
+      --electric-blue: #00d4ff;
+      --text-primary: #eef7ff;
+      --text-secondary: #99aec2;
+      --glass-bg: rgba(255, 255, 255, 0.08);
+      --glass-border: rgba(255, 255, 255, 0.18);
+      --radius: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--text-primary);
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 10% 0%, rgba(0, 212, 255, 0.08), transparent 42%),
+        radial-gradient(circle at 90% 100%, rgba(46, 255, 136, 0.08), transparent 38%),
+        repeating-linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0 1px, transparent 1px 32px),
+        var(--bg);
+      min-height: 100vh;
+    }
+
+    button,
+    .tab-btn,
+    .board-choice,
+    .mini-3d,
+    .upload-zone,
+    .search-box {
+      transition: transform 0.16s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+    }
+
+    button:active,
+    .tab-btn:active,
+    .board-choice:active,
+    .mini-3d:active,
+    .upload-zone:active,
+    .search-box:active {
+      transform: scale(0.95);
+    }
+
+    .app {
+      width: min(1200px, 94vw);
+      margin: 0 auto;
+      padding: 24px 0 34px;
+    }
+
+    .top-nav-wrap {
+      position: sticky;
+      top: 12px;
+      z-index: 20;
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .top-nav {
+      position: relative;
+      display: inline-grid;
+      grid-template-columns: repeat(4, minmax(100px, 1fr));
+      gap: 8px;
+      padding: 8px;
+      border-radius: 999px;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.36);
+    }
+
+    .tab-btn {
+      position: relative;
+      border: none;
+      border-radius: 999px;
+      padding: 11px 20px;
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .tab-btn.active {
+      color: #f3fbff;
+      text-shadow: 0 0 10px rgba(0, 212, 255, 0.45);
+    }
+
+    .tab-indicator {
+      position: absolute;
+      bottom: 5px;
+      left: 0;
+      width: 120px;
+      height: 3px;
+      border-radius: 99px;
+      background: linear-gradient(90deg, var(--aurora-green), var(--electric-blue));
+      box-shadow: 0 0 16px rgba(0, 212, 255, 0.9), 0 0 8px rgba(46, 255, 136, 0.8);
+      transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), width 0.25s ease;
+    }
+
+    .tab-panels {
+      position: relative;
+      min-height: 680px;
+    }
+
+    .tab-panel {
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(8px);
+      transition: opacity 0.28s ease, transform 0.28s ease, visibility 0.28s;
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .tab-panel.active {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+      position: relative;
+      pointer-events: auto;
+    }
+
+    .glass-card {
+      border-radius: var(--radius);
+      border: 1px solid var(--glass-border);
+      background: var(--glass-bg);
+      backdrop-filter: blur(10px);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 14px 28px rgba(0, 0, 0, 0.3);
+    }
+
+    .title-row {
+      margin-bottom: 14px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #dbf3ff;
+    }
+
+    /* Panel 1 */
+    .panel1 {
+      display: grid;
+      gap: 18px;
+    }
+
+    .board-selector {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+    }
+
+    .board-choice {
+      position: relative;
+      min-height: 170px;
+      border-radius: var(--radius);
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      cursor: pointer;
+    }
+
+    .board-choice img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: contrast(1.05) brightness(0.85);
+      transform: scale(1.01);
+      transition: transform 0.28s ease;
+    }
+
+    .board-choice:hover img {
+      transform: scale(1.06);
+    }
+
+    .board-choice::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, rgba(8, 14, 20, 0.66), transparent 48%);
+    }
+
+    .board-choice span {
+      position: absolute;
+      left: 16px;
+      bottom: 14px;
+      z-index: 1;
+      font-size: 1.05rem;
+      font-weight: 600;
+    }
+
+    .waterfall {
+      columns: 2 320px;
+      column-gap: 14px;
+    }
+
+    .video-card {
+      break-inside: avoid;
+      margin-bottom: 14px;
+      position: relative;
+      overflow: hidden;
+      padding: 12px;
+    }
+
+    .video-cover {
+      width: 100%;
+      border-radius: 12px;
+      height: 240px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .mini-3d {
+      position: absolute;
+      right: 18px;
+      bottom: 62px;
+      width: 112px;
+      height: 142px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.23);
+      background: rgba(10, 20, 26, 0.55);
+      backdrop-filter: blur(8px);
+      padding: 7px;
+      cursor: pointer;
+    }
+
+    .muscle {
+      transition: opacity 0.2s ease, filter 0.2s ease;
+      opacity: 0.25;
+    }
+
+    .mini-3d:hover .muscle.quad,
+    .mini-3d.active-quads .muscle.quad {
+      opacity: 1;
+      filter: drop-shadow(0 0 7px rgba(46, 255, 136, 0.85));
+      animation: breathe 1.2s infinite;
+    }
+
+    .mini-3d:hover .muscle.core,
+    .mini-3d.active-core .muscle.core {
+      opacity: 1;
+      filter: drop-shadow(0 0 7px rgba(0, 212, 255, 0.9));
+      animation: breathe 1.25s infinite;
+    }
+
+    @keyframes breathe {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.09); }
+    }
+
+    .tag-row {
+      margin-top: 10px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .tag {
+      padding: 5px 9px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: #d9eff9;
+      background: rgba(255, 255, 255, 0.07);
+    }
+
+    /* Panel 2 */
+    .panel2 {
+      display: grid;
+      grid-template-columns: 1.05fr 1fr;
+      gap: 18px;
+    }
+
+    .upload-card {
+      padding: 20px;
+      min-height: 520px;
+      display: grid;
+      grid-template-rows: 1fr auto auto;
+      gap: 14px;
+    }
+
+    .upload-zone {
+      border-radius: var(--radius);
+      border: 1px dashed rgba(255, 255, 255, 0.32);
+      display: grid;
+      place-items: center;
+      background: rgba(255, 255, 255, 0.04);
+      cursor: pointer;
+      text-align: center;
+      padding: 26px;
+    }
+
+    .upload-plus {
+      width: 108px;
+      height: 108px;
+      border-radius: 28px;
+      display: grid;
+      place-items: center;
+      font-size: 64px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      margin: 0 auto 12px;
+    }
+
+    .upload-tip {
+      margin: 0;
+      color: var(--text-secondary);
+    }
+
+    .upload-btn {
+      border: none;
+      border-radius: 12px;
+      font-size: 0.98rem;
+      font-weight: 600;
+      color: #00131b;
+      background: linear-gradient(90deg, var(--aurora-green), var(--electric-blue));
+      padding: 12px 16px;
+      cursor: pointer;
+    }
+
+    .upload-btn.uploading {
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 rgba(0, 212, 255, 0); }
+      50% { box-shadow: 0 0 18px rgba(0, 212, 255, 0.72); }
+    }
+
+    .file-msg {
+      min-height: 16px;
+      font-size: 0.84rem;
+      color: #8eb0c8;
+      text-align: center;
+    }
+
+    .data-col {
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      gap: 12px;
+    }
+
+    .stats-card,
+    .feedback-card,
+    .joint-card {
+      padding: 14px;
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .metric-box {
+      border-radius: 12px;
+      padding: 12px 10px;
+      border: 1px solid rgba(255, 255, 255, 0.17);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .metric-label {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .metric-num {
+      font-size: 1.45rem;
+      font-weight: 700;
+      color: #c8f8ff;
+      text-shadow: 0 0 16px rgba(0, 212, 255, 0.4);
+    }
+
+    .feedback-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .feedback-btn {
+      border: none;
+      border-radius: 10px;
+      padding: 8px 12px;
+      cursor: pointer;
+      color: #00131b;
+      background: linear-gradient(90deg, var(--aurora-green), var(--electric-blue));
+      font-weight: 600;
+    }
+
+    .joint-map {
+      margin-top: 10px;
+      border-radius: 14px;
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      min-height: 210px;
+      display: grid;
+      place-items: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .joint {
+      fill: rgba(165, 182, 202, 0.28);
+      transition: fill 0.2s ease, filter 0.2s ease;
+    }
+
+    .joint.highlight {
+      fill: var(--aurora-green);
+      filter: drop-shadow(0 0 10px rgba(46, 255, 136, 0.95));
+      animation: breathe 1.2s infinite;
+    }
+
+    /* Panel 3 */
+    .panel3 {
+      display: grid;
+      gap: 14px;
+    }
+
+    .status-card,
+    .focus-card,
+    .search-card,
+    .match-card,
+    .roadmap-card,
+    .today-card {
+      padding: 14px 16px;
+    }
+
+    .loc-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-weight: 600;
+    }
+
+    .loc-pill {
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(255, 255, 255, 0.06);
+      color: #d8eaff;
+      padding: 6px 10px;
+      font-size: 0.8rem;
+    }
+
+    .resort-row {
+      margin-top: 12px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .plan-select {
+      width: 100%;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+      color: #e8f6ff;
+      background: rgba(255, 255, 255, 0.06);
+      padding: 10px 12px;
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    .focus-grid {
+      margin-top: 10px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .focus-box {
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(255, 255, 255, 0.05);
+      padding: 10px;
+      min-height: 82px;
+    }
+
+    .focus-label {
+      color: #93abc2;
+      font-size: 0.8rem;
+      margin-bottom: 6px;
+    }
+
+    .focus-value {
+      color: #e8fff3;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+
+    .focus-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #ebfff7;
+      margin-top: 6px;
+    }
+
+    .search-box {
+      width: 100%;
+      border: 1px solid rgba(0, 212, 255, 0.45);
+      outline: none;
+      border-radius: 12px;
+      padding: 12px 14px;
+      color: #f0f8ff;
+      background: rgba(0, 212, 255, 0.06);
+      box-shadow: 0 0 18px rgba(0, 212, 255, 0.25);
+      font-size: 0.96rem;
+    }
+
+    .plan-upload-row {
+      margin-top: 10px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .plan-btn {
+      border: none;
+      border-radius: 10px;
+      background: linear-gradient(90deg, var(--aurora-green), var(--electric-blue));
+      color: #00131b;
+      font-size: 0.88rem;
+      font-weight: 700;
+      padding: 9px 12px;
+      cursor: pointer;
+    }
+
+    .plan-file-msg {
+      font-size: 0.82rem;
+      color: #94b1c4;
+      min-height: 16px;
+    }
+
+    .plan-progress {
+      margin-top: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+      display: none;
+    }
+
+    .plan-progress > span {
+      display: block;
+      width: 0;
+      height: 100%;
+      background: linear-gradient(90deg, #2eff88, #00d4ff);
+      box-shadow: 0 0 10px rgba(0, 212, 255, 0.55);
+    }
+
+    .roadmap-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+      display: grid;
+      gap: 8px;
+    }
+
+    .roadmap-item {
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.05);
+      padding: 9px 10px;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 0.88rem;
+    }
+
+    .roadmap-week {
+      color: #93b0c6;
+      white-space: nowrap;
+    }
+
+    .match-title {
+      color: #cdf0ff;
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+
+    .match-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      border-radius: 10px;
+      padding: 10px;
+      margin-bottom: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      font-size: 0.9rem;
+    }
+
+    .match-badge {
+      color: #012;
+      background: rgba(46, 255, 136, 0.86);
+      border-radius: 999px;
+      padding: 3px 8px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .map-suggest {
+      margin-top: 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      background:
+        repeating-linear-gradient(0deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 24px),
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 24px),
+        rgba(255, 255, 255, 0.04);
+      padding: 10px;
+    }
+
+    .map-route {
+      color: #bde7ff;
+      font-size: 0.85rem;
+      margin: 6px 0;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    /* Panel 4 – GPS 轨迹记录 */
+    .panel4 {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 16px;
+    }
+
+    .gps-map-card {
+      padding: 0;
+      overflow: hidden;
+      min-height: 520px;
+      position: relative;
+    }
+
+    #gps-map {
+      width: 100%;
+      height: 520px;
+      border-radius: var(--radius);
+      z-index: 1;
+    }
+
+    .gps-map-overlay {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      z-index: 500;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .gps-status-pill {
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(10, 16, 22, 0.82);
+      backdrop-filter: blur(8px);
+      color: #c8e8ff;
+    }
+
+    .gps-status-pill.recording {
+      color: #ffb4b4;
+      border-color: rgba(255, 80, 80, 0.5);
+      animation: gpsPulse 1.4s infinite;
+    }
+
+    .gps-status-pill.paused {
+      color: #ffd88a;
+      border-color: rgba(255, 200, 80, 0.4);
+    }
+
+    @keyframes gpsPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255, 80, 80, 0.4); }
+      50% { box-shadow: 0 0 12px 2px rgba(255, 80, 80, 0.55); }
+    }
+
+    .gps-side {
+      display: grid;
+      grid-template-rows: auto auto 1fr;
+      gap: 12px;
+    }
+
+    .gps-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .gps-stat-box {
+      border-radius: 12px;
+      padding: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.17);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .gps-stat-label {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+
+    .gps-stat-value {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #c8f8ff;
+      text-shadow: 0 0 14px rgba(0, 212, 255, 0.35);
+    }
+
+    .gps-stat-value.highlight {
+      color: #2eff88;
+      text-shadow: 0 0 14px rgba(46, 255, 136, 0.45);
+    }
+
+    .gps-controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+    }
+
+    .gps-btn {
+      border: none;
+      border-radius: 12px;
+      padding: 12px 10px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      cursor: pointer;
+      color: #00131b;
+    }
+
+    .gps-btn-start {
+      background: linear-gradient(90deg, var(--aurora-green), var(--electric-blue));
+    }
+
+    .gps-btn-pause {
+      background: rgba(255, 200, 80, 0.9);
+      color: #2a1f00;
+    }
+
+    .gps-btn-stop {
+      background: rgba(255, 100, 100, 0.88);
+      color: #fff;
+    }
+
+    .gps-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .gps-coord-row {
+      margin-top: 8px;
+      font-size: 0.82rem;
+      color: #8eb0c8;
+      line-height: 1.6;
+    }
+
+    .gps-history-card {
+      padding: 14px;
+      max-height: 280px;
+      overflow-y: auto;
+    }
+
+    .gps-history-item {
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.05);
+      padding: 10px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: border-color 0.2s ease, background 0.2s ease;
+    }
+
+    .gps-history-item:hover,
+    .gps-history-item.active {
+      border-color: rgba(0, 212, 255, 0.45);
+      background: rgba(0, 212, 255, 0.08);
+    }
+
+    .gps-history-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #dbf3ff;
+    }
+
+    .gps-history-meta {
+      margin-top: 4px;
+      font-size: 0.78rem;
+      color: #8eb0c8;
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .gps-permission-tip {
+      font-size: 0.82rem;
+      color: #94b1c4;
+      line-height: 1.5;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px dashed rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .leaflet-container {
+      background: #0d1218;
+      font-family: inherit;
+    }
+
+    @media (max-width: 980px) {
+      .panel2,
+      .panel4 {
+        grid-template-columns: 1fr;
+      }
+      .waterfall {
+        columns: 1 280px;
+      }
+      .top-nav {
+        width: min(94vw, 620px);
+      }
+      .tab-btn {
+        padding: 10px 8px;
+        font-size: 0.82rem;
+      }
+      .tab-panels {
+        min-height: 760px;
+      }
+      #gps-map {
+        height: 360px;
+      }
+      .gps-map-card {
+        min-height: 360px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="top-nav-wrap">
+      <nav class="top-nav glass-card" id="tab-nav">
+        <button class="tab-btn active" data-tab="tab-beginner">新手入门</button>
+        <button class="tab-btn" data-tab="tab-diagnosis">AI诊断</button>
+        <button class="tab-btn" data-tab="tab-plan">进阶计划</button>
+        <button class="tab-btn" data-tab="tab-gps">GPS记录</button>
+        <span class="tab-indicator" id="tab-indicator"></span>
+      </nav>
+    </div>
+
+    <main class="tab-panels">
+      <section class="tab-panel panel1 active" id="tab-beginner">
+        <div class="title-row">新手入门 · 灵感流</div>
+        <div class="board-selector">
+          <div class="board-choice glass-card">
+            <img src="https://images.unsplash.com/photo-1518604666860-9ed391f76460?auto=format&fit=crop&w=1400&q=80" alt="单板滑雪封面">
+            <span>单板模式</span>
+          </div>
+          <div class="board-choice glass-card">
+            <img src="https://images.unsplash.com/photo-1551524164-687a55dd1126?auto=format&fit=crop&w=1400&q=80" alt="双板滑雪封面">
+            <span>双板模式</span>
+          </div>
+        </div>
+
+        <div class="waterfall">
+          <article class="video-card glass-card">
+            <img class="video-cover" src="https://images.unsplash.com/photo-1551698618-1dfe5d97d256?auto=format&fit=crop&w=900&q=80" alt="滑行封面1">
+            <button class="mini-3d active-quads" data-muscle="quads" aria-label="雪板动作预览">
+              <svg viewBox="0 0 90 120" width="100%" height="100%">
+                <ellipse cx="45" cy="106" rx="26" ry="8" fill="none" stroke="#79d8ff" stroke-width="2.2"/>
+                <line x1="45" y1="18" x2="45" y2="46" stroke="#9fd0e4" stroke-width="2"/>
+                <circle cx="45" cy="13" r="6.5" fill="none" stroke="#9fd0e4" stroke-width="2"/>
+                <line x1="45" y1="44" x2="31" y2="67" stroke="#9fd0e4" stroke-width="2"/>
+                <line x1="45" y1="44" x2="59" y2="67" stroke="#9fd0e4" stroke-width="2"/>
+                <line x1="45" y1="56" x2="40" y2="90" stroke="#9fd0e4" stroke-width="2"/>
+                <line x1="45" y1="56" x2="52" y2="90" stroke="#9fd0e4" stroke-width="2"/>
+                <line x1="40" y1="90" x2="33" y2="102" stroke="#9fd0e4" stroke-width="2"/>
+                <line x1="52" y1="90" x2="58" y2="102" stroke="#9fd0e4" stroke-width="2"/>
+                <ellipse class="muscle quad" cx="38" cy="96" rx="7" ry="10" fill="#2eff88"/>
+                <ellipse class="muscle quad" cx="52" cy="96" rx="7" ry="10" fill="#2eff88"/>
+                <ellipse class="muscle core" cx="45" cy="58" rx="10" ry="12" fill="#00d4ff"/>
+              </svg>
+            </button>
+            <div class="tag-row">
+              <span class="tag">训练：单板换刃节奏</span>
+              <span class="tag">核心：踝膝髋协同下压</span>
+            </div>
+          </article>
+
+          <article class="video-card glass-card">
+            <img class="video-cover" src="https://images.unsplash.com/photo-1547447134-cd3f5c716030?auto=format&fit=crop&w=900&q=80" alt="滑行封面2">
+            <button class="mini-3d active-core" data-muscle="core" aria-label="3D预览">
+              <svg viewBox="0 0 90 120" width="100%" height="100%">
+                <line x1="45" y1="14" x2="45" y2="42" stroke="#9fd0e4" stroke-width="2"/>
+                <circle cx="45" cy="10" r="7" fill="none" stroke="#9fd0e4" stroke-width="2"/>
+                <line x1="45" y1="40" x2="30" y2="64" stroke="#9fd0e4" stroke-width="2"/>
+                <line x1="45" y1="40" x2="60" y2="64" stroke="#9fd0e4" stroke-width="2"/>
+                <line x1="45" y1="52" x2="45" y2="86" stroke="#9fd0e4" stroke-width="2"/>
+                <line x1="45" y1="86" x2="34" y2="108" stroke="#9fd0e4" stroke-width="2"/>
+                <line x1="45" y1="86" x2="56" y2="108" stroke="#9fd0e4" stroke-width="2"/>
+                <ellipse class="muscle quad" cx="38" cy="96" rx="7" ry="10" fill="#2eff88"/>
+                <ellipse class="muscle quad" cx="52" cy="96" rx="7" ry="10" fill="#2eff88"/>
+                <ellipse class="muscle core" cx="45" cy="58" rx="10" ry="12" fill="#00d4ff"/>
+              </svg>
+            </button>
+            <div class="tag-row">
+              <span class="tag">训练：平行转弯稳定</span>
+              <span class="tag">核心：外板承压控制</span>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="tab-panel panel2" id="tab-diagnosis">
+        <article class="upload-card glass-card">
+          <label class="upload-zone" for="video-input">
+            <div>
+              <div class="upload-plus">+</div>
+              <p class="upload-tip">上传你的滑行视频（支持MP4/MOV）</p>
+            </div>
+          </label>
+          <input id="video-input" type="file" accept="video/mp4,video/quicktime,.mov,.mp4" hidden>
+          <button class="upload-btn" id="start-diagnose">开始AI诊断</button>
+          <div class="file-msg" id="file-msg"></div>
+        </article>
+
+        <div class="data-col">
+          <article class="stats-card glass-card">
+            <div class="title-row">AI诊断 · 仪表盘</div>
+            <div class="metrics-grid">
+              <div class="metric-box">
+                <div class="metric-label">内倾角</div>
+                <div class="metric-num" id="metric-angle">0°</div>
+              </div>
+              <div class="metric-box">
+                <div class="metric-label">差分安定度</div>
+                <div class="metric-num" id="metric-stability">0</div>
+              </div>
+            </div>
+          </article>
+
+          <article class="feedback-card glass-card">
+            <div class="title-row">发力反馈模块</div>
+            <div class="feedback-row">
+              <span style="color:var(--text-secondary);font-size:0.9rem;">点击后高亮关键关节发力区</span>
+              <button class="feedback-btn" id="highlight-joints">显示发力反馈</button>
+            </div>
+          </article>
+
+          <article class="joint-card glass-card">
+            <div class="title-row">3D关节地图</div>
+            <div class="joint-map">
+              <svg viewBox="0 0 300 180" width="92%" height="92%">
+                <line x1="150" y1="20" x2="150" y2="76" stroke="#9fbad0" stroke-width="3"/>
+                <line x1="150" y1="44" x2="110" y2="74" stroke="#9fbad0" stroke-width="3"/>
+                <line x1="150" y1="44" x2="190" y2="74" stroke="#9fbad0" stroke-width="3"/>
+                <line x1="150" y1="76" x2="130" y2="128" stroke="#9fbad0" stroke-width="3"/>
+                <line x1="150" y1="76" x2="170" y2="128" stroke="#9fbad0" stroke-width="3"/>
+                <circle cx="150" cy="14" r="10" fill="none" stroke="#9fbad0" stroke-width="3"/>
+                <circle class="joint" data-joint cx="150" cy="76" r="10"/>
+                <circle class="joint" data-joint cx="130" cy="128" r="9"/>
+                <circle class="joint" data-joint cx="170" cy="128" r="9"/>
+                <circle class="joint" data-joint cx="110" cy="74" r="8"/>
+                <circle class="joint" data-joint cx="190" cy="74" r="8"/>
+              </svg>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="tab-panel panel3" id="tab-plan">
+        <article class="status-card glass-card">
+          <div class="loc-row">
+            <span>📍 智能定位：北京崇礼周边</span>
+            <span class="loc-pill">可手动切换雪场</span>
+          </div>
+          <div class="resort-row">
+            <select id="city-select" class="plan-select" aria-label="选择区域">
+              <option value="chongli">崇礼区域</option>
+              <option value="jilin">吉林区域</option>
+              <option value="harbin">哈尔滨区域</option>
+            </select>
+            <select id="resort-select" class="plan-select" aria-label="选择雪场">
+              <option value="wanlong">万龙滑雪场</option>
+              <option value="thaiwoo">太舞滑雪小镇</option>
+              <option value="yun-ding">云顶滑雪公园</option>
+            </select>
+          </div>
+        </article>
+        <article class="focus-card glass-card">
+          <div class="title-row">进阶目标制定</div>
+          <div class="resort-row">
+            <select id="discipline-select" class="plan-select" aria-label="选择单双板">
+              <option value="single">单板</option>
+              <option value="double">双板</option>
+            </select>
+            <select id="goal-select" class="plan-select" aria-label="选择长期目标">
+              <option value="single_carving">单板刻滑（Carving）</option>
+              <option value="single_switch">反脚滑行（Switch）</option>
+              <option value="single_ground">地形公园基础（Park）</option>
+              <option value="single_freeride">全山地自由滑行（Freeride）</option>
+            </select>
+          </div>
+          <input id="goal-search" class="search-box" value="刻滑 Carving" aria-label="输入训练目标补充说明">
+          <div class="focus-grid">
+            <div class="focus-box">
+              <div class="focus-label">当前视频状态</div>
+              <div class="focus-value" id="current-state">待上传评估</div>
+            </div>
+            <div class="focus-box">
+              <div class="focus-label">目标状态</div>
+              <div class="focus-value" id="target-state">稳定中高速刻滑</div>
+            </div>
+            <div class="focus-box">
+              <div class="focus-label">预计雪时</div>
+              <div class="focus-value" id="snow-hours">-- 小时</div>
+            </div>
+            <div class="focus-box">
+              <div class="focus-label">建议周期</div>
+              <div class="focus-value" id="plan-cycle">-- 周</div>
+            </div>
+          </div>
+        </article>
+        <article class="search-card glass-card">
+          <div class="title-row">上传视频并迁移评估</div>
+          <div class="plan-upload-row">
+            <input id="plan-video-input" type="file" accept="video/mp4,video/quicktime,.mov,.mp4">
+            <button id="plan-evaluate-btn" class="plan-btn">评估并生成进阶计划</button>
+          </div>
+          <div id="plan-file-msg" class="plan-file-msg"></div>
+          <div id="plan-progress" class="plan-progress"><span id="plan-progress-bar"></span></div>
+        </article>
+        <article class="roadmap-card glass-card">
+          <div class="match-title">阶段化制定计划（从视频状态到目标）</div>
+          <ul id="roadmap-list" class="roadmap-list">
+            <li class="roadmap-item"><span>等待视频评估后生成路径</span><span class="roadmap-week">-</span></li>
+          </ul>
+        </article>
+        <article class="match-card glass-card">
+          <div class="match-title">今日练习建议（结合雪场公开信息）</div>
+          <div id="today-list">
+            <div class="match-item">
+              <span>先选择雪场并完成视频评估</span>
+              <span class="match-badge">待生成</span>
+            </div>
+          </div>
+          <div id="map-suggest" class="map-suggest">
+            <div class="map-route"><span>建议训练点位：</span><span>待生成</span></div>
+            <div class="map-route"><span>推荐雪道：</span><span>待生成</span></div>
+            <div class="map-route"><span>拥挤度提示：</span><span>待生成</span></div>
+          </div>
+        </article>
+      </section>
+
+      <section class="tab-panel panel4" id="tab-gps">
+        <article class="gps-map-card glass-card">
+          <div id="gps-map"></div>
+          <div class="gps-map-overlay">
+            <span class="gps-status-pill" id="gps-status-pill">待开始</span>
+            <span class="gps-status-pill" id="gps-point-count">0 个轨迹点</span>
+          </div>
+        </article>
+
+        <div class="gps-side">
+          <article class="glass-card" style="padding:14px;">
+            <div class="title-row">GPS 滑雪轨迹 · 实时记录</div>
+            <div class="gps-permission-tip" id="gps-permission-tip">
+              点击「开始记录」后将请求定位权限。建议在雪场户外使用，并开启手机 GPS 高精度模式以获得最佳轨迹效果。
+            </div>
+            <div class="gps-stats-grid" style="margin-top:12px;">
+              <div class="gps-stat-box">
+                <div class="gps-stat-label">滑行距离</div>
+                <div class="gps-stat-value highlight" id="gps-distance">0 m</div>
+              </div>
+              <div class="gps-stat-box">
+                <div class="gps-stat-label">记录时长</div>
+                <div class="gps-stat-value" id="gps-duration">00:00</div>
+              </div>
+              <div class="gps-stat-box">
+                <div class="gps-stat-label">当前速度</div>
+                <div class="gps-stat-value" id="gps-speed">0 km/h</div>
+              </div>
+              <div class="gps-stat-box">
+                <div class="gps-stat-label">最高速度</div>
+                <div class="gps-stat-value" id="gps-max-speed">0 km/h</div>
+              </div>
+            </div>
+            <div class="gps-coord-row">
+              <div>纬度：<span id="gps-lat">--</span></div>
+              <div>经度：<span id="gps-lng">--</span></div>
+              <div>海拔：<span id="gps-alt">--</span> · 精度：<span id="gps-accuracy">--</span></div>
+            </div>
+            <div class="gps-controls" style="margin-top:14px;">
+              <button class="gps-btn gps-btn-start" id="gps-btn-start">开始记录</button>
+              <button class="gps-btn gps-btn-pause" id="gps-btn-pause" disabled>暂停</button>
+              <button class="gps-btn gps-btn-stop" id="gps-btn-stop" disabled>结束</button>
+            </div>
+          </article>
+
+          <article class="gps-history-card glass-card">
+            <div class="title-row">历史滑行记录</div>
+            <div id="gps-history-list">
+              <div class="gps-permission-tip">暂无记录，完成一次滑行后将显示在此</div>
+            </div>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script>
+    (function initInteractivePrototype() {
+      const tabNav = document.getElementById("tab-nav");
+      const tabButtons = Array.from(tabNav.querySelectorAll(".tab-btn"));
+      const tabPanels = Array.from(document.querySelectorAll(".tab-panel"));
+      const indicator = document.getElementById("tab-indicator");
+
+      let diagnosisTimer = null;
+      let reportToastTimer = null;
+      let planEvaluateTimer = null;
+
+      const input = document.getElementById("video-input");
+      const fileMsg = document.getElementById("file-msg");
+      const diagnoseBtn = document.getElementById("start-diagnose");
+      const angleEl = document.getElementById("metric-angle");
+      const stabilityEl = document.getElementById("metric-stability");
+
+      const jointBtn = document.getElementById("highlight-joints");
+      const joints = Array.from(document.querySelectorAll("[data-joint]"));
+      const boardCards = Array.from(document.querySelectorAll(".board-choice"));
+      const videoCards = Array.from(document.querySelectorAll(".video-card"));
+      const mini3DButtons = Array.from(document.querySelectorAll(".mini-3d"));
+      const citySelect = document.getElementById("city-select");
+      const resortSelect = document.getElementById("resort-select");
+      const disciplineSelect = document.getElementById("discipline-select");
+      const goalSelect = document.getElementById("goal-select");
+      const goalSearch = document.getElementById("goal-search");
+      const planVideoInput = document.getElementById("plan-video-input");
+      const planEvaluateBtn = document.getElementById("plan-evaluate-btn");
+      const planFileMsg = document.getElementById("plan-file-msg");
+      const planProgress = document.getElementById("plan-progress");
+      const planProgressBar = document.getElementById("plan-progress-bar");
+      const currentState = document.getElementById("current-state");
+      const targetState = document.getElementById("target-state");
+      const snowHours = document.getElementById("snow-hours");
+      const planCycle = document.getElementById("plan-cycle");
+      const roadmapList = document.getElementById("roadmap-list");
+      const todayList = document.getElementById("today-list");
+      const mapSuggest = document.getElementById("map-suggest");
+
+      injectDynamicStyles();
+      createAnatomyOverlay();
+      createImmersiveModal();
+
+      function moveIndicator(targetBtn) {
+        const navRect = tabNav.getBoundingClientRect();
+        const btnRect = targetBtn.getBoundingClientRect();
+        indicator.style.width = `${Math.max(btnRect.width - 22, 48)}px`;
+        indicator.style.transform = `translateX(${btnRect.left - navRect.left + 11}px)`;
+      }
+
+      function activateTab(tabId) {
+        tabButtons.forEach((btn) => btn.classList.toggle("active", btn.dataset.tab === tabId));
+        tabPanels.forEach((panel) => panel.classList.toggle("active", panel.id === tabId));
+        const activeButton = tabButtons.find((btn) => btn.dataset.tab === tabId);
+        if (activeButton) moveIndicator(activeButton);
+      }
+
+      tabButtons.forEach((btn) => {
+        btn.addEventListener("click", () => activateTab(btn.dataset.tab));
+      });
+
+      window.addEventListener("resize", () => {
+        const activeButton = tabButtons.find((btn) => btn.classList.contains("active"));
+        if (activeButton) moveIndicator(activeButton);
+      });
+
+      input.addEventListener("change", () => {
+        const f = input.files && input.files[0];
+        fileMsg.textContent = f ? `已选择文件：${f.name}` : "";
+      });
+
+      function animateNumber(el, end, suffix = "", duration = 1000) {
+        const start = Number(String(el.textContent).replace(/[^\d.-]/g, "")) || 0;
+        const startTime = performance.now();
+        function tick(now) {
+          const p = Math.min((now - startTime) / duration, 1);
+          const value = start + (end - start) * (1 - Math.pow(1 - p, 3));
+          el.textContent = `${Math.round(value)}${suffix}`;
+          if (p < 1) requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+      }
+
+      async function analyzeVideoFileFrames(file, onProgress) {
+        const hiddenVideo = document.createElement("video");
+        hiddenVideo.muted = true;
+        hiddenVideo.playsInline = true;
+        hiddenVideo.preload = "auto";
+        hiddenVideo.style.position = "fixed";
+        hiddenVideo.style.left = "-9999px";
+        hiddenVideo.style.top = "-9999px";
+
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
+        const fileUrl = URL.createObjectURL(file);
+        hiddenVideo.src = fileUrl;
+        document.body.appendChild(hiddenVideo);
+
+        await new Promise((resolve, reject) => {
+          hiddenVideo.onloadedmetadata = resolve;
+          hiddenVideo.onerror = reject;
+        });
+
+        canvas.width = Math.max(160, Math.floor(hiddenVideo.videoWidth * 0.2));
+        canvas.height = Math.max(90, Math.floor(hiddenVideo.videoHeight * 0.2));
+
+        const duration = Math.max(hiddenVideo.duration || 1, 1);
+        const step = duration > 70 ? 0.5 : 0.25;
+        const totalFrames = Math.max(8, Math.floor(duration / step));
+        const samples = [];
+        let lastBrightness = null;
+
+        for (let i = 0; i < totalFrames; i++) {
+          const t = Math.min(i * step, Math.max(0, duration - 0.03));
+          await new Promise((resolve) => {
+            const onSeek = () => {
+              hiddenVideo.removeEventListener("seeked", onSeek);
+              resolve();
+            };
+            hiddenVideo.addEventListener("seeked", onSeek);
+            hiddenVideo.currentTime = t;
+          });
+
+          ctx.drawImage(hiddenVideo, 0, 0, canvas.width, canvas.height);
+          const frame = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+          let lumaSum = 0;
+          let edgeSum = 0;
+          for (let p = 0; p < frame.length; p += 4) {
+            const luma = 0.2126 * frame[p] + 0.7152 * frame[p + 1] + 0.0722 * frame[p + 2];
+            lumaSum += luma;
+            if (p >= 4) {
+              const prevLuma = 0.2126 * frame[p - 4] + 0.7152 * frame[p - 3] + 0.0722 * frame[p - 2];
+              edgeSum += Math.abs(luma - prevLuma);
+            }
+          }
+
+          const avgBrightness = lumaSum / (frame.length / 4);
+          const avgEdge = edgeSum / (frame.length / 4);
+          const motion = lastBrightness === null ? 0 : Math.abs(avgBrightness - lastBrightness);
+          lastBrightness = avgBrightness;
+          samples.push({ motion, edge: avgEdge });
+
+          if (onProgress) onProgress(Math.round(((i + 1) / totalFrames) * 100));
+        }
+
+        URL.revokeObjectURL(fileUrl);
+        hiddenVideo.remove();
+
+        const avg = (arr, key) => arr.reduce((sum, item) => sum + item[key], 0) / Math.max(arr.length, 1);
+        const avgMotion = avg(samples, "motion");
+        const avgEdge = avg(samples, "edge");
+        const stabilityScore = Math.round(Math.max(50, Math.min(98, 94 - avgMotion * 2.5 - avgEdge * 0.07)));
+        const inclination = Math.round(Math.max(28, Math.min(56, 32 + avgEdge * 0.2)));
+
+        return {
+          sampledFrames: totalFrames,
+          durationSeconds: duration,
+          stabilityScore,
+          inclination
+        };
+      }
+
+      function showReportToast() {
+        const old = document.getElementById("analysis-report-toast");
+        if (old) old.remove();
+
+        const toast = document.createElement("div");
+        toast.id = "analysis-report-toast";
+        toast.className = "analysis-toast";
+        toast.innerHTML = `
+          <strong>分支分析报告已生成</strong>
+          <span>关键结论：外侧刃抓地提前，建议进入进阶计划进行“换刃稳定性专项”。</span>
+        `;
+        document.body.appendChild(toast);
+
+        reportToastTimer = setTimeout(() => {
+          toast.classList.add("hide");
+          setTimeout(() => toast.remove(), 300);
+        }, 3600);
+      }
+
+      function startDiagnosisFlow() {
+        if (diagnosisTimer) clearInterval(diagnosisTimer);
+        if (reportToastTimer) clearTimeout(reportToastTimer);
+        const file = input.files && input.files[0];
+        if (!file) {
+          fileMsg.textContent = "请先上传视频后再开始AI诊断。";
+          return;
+        }
+
+        diagnoseBtn.classList.add("uploading");
+        diagnoseBtn.disabled = true;
+        diagnoseBtn.textContent = "逐帧分析中 0%";
+        fileMsg.textContent = "正在读取视频并执行逐帧动作评估...";
+
+        analyzeVideoFileFrames(file, (progress) => {
+          diagnoseBtn.textContent = `逐帧分析中 ${progress}%`;
+        })
+          .then((result) => {
+            diagnoseBtn.classList.remove("uploading");
+            diagnoseBtn.disabled = false;
+            diagnoseBtn.textContent = "开始AI诊断";
+            fileMsg.textContent = `分析完成：${result.sampledFrames} 帧，视频 ${result.durationSeconds.toFixed(1)} 秒`;
+            animateNumber(angleEl, result.inclination, "°", 900);
+            animateNumber(stabilityEl, result.stabilityScore, "", 1100);
+            showReportToast();
+            activateTab("tab-plan");
+          })
+          .catch(() => {
+            diagnoseBtn.classList.remove("uploading");
+            diagnoseBtn.disabled = false;
+            diagnoseBtn.textContent = "开始AI诊断";
+            fileMsg.textContent = "视频解析失败，请使用 MP4/MOV 重试。";
+          });
+      }
+
+      diagnoseBtn.addEventListener("click", startDiagnosisFlow);
+
+      let highlighted = false;
+      jointBtn.addEventListener("click", () => {
+        highlighted = !highlighted;
+        joints.forEach((j) => j.classList.toggle("highlight", highlighted));
+        jointBtn.textContent = highlighted ? "隐藏发力反馈" : "显示发力反馈";
+      });
+
+      mini3DButtons.forEach((btn) => {
+        btn.addEventListener("click", (event) => {
+          event.stopPropagation();
+          const isQuads = btn.dataset.muscle === "quads";
+          btn.classList.toggle("active-quads", isQuads);
+          btn.classList.toggle("active-core", !isQuads);
+        });
+      });
+
+      bindBeginnerInteractions();
+      bindWaterfallPlayback();
+      initializePlanModule();
+      initializeGpsModule();
+
+      activateTab("tab-beginner");
+
+      function initializePlanModule() {
+        const goalOptionsByDiscipline = {
+          single: [
+            { value: "single_carving", label: "单板刻滑（Carving）" },
+            { value: "single_switch", label: "反脚滑行（Switch）" },
+            { value: "single_ground", label: "地形公园基础（Park）" },
+            { value: "single_freeride", label: "全山地自由滑行（Freeride）" }
+          ],
+          double: [
+            { value: "double_parallel", label: "双板平行式高级稳定" },
+            { value: "double_carving", label: "双板卡宾进阶（Carving）" },
+            { value: "double_short_turn", label: "短回转节奏控制" },
+            { value: "double_giant_slalom", label: "大回转竞速（GS）" },
+            { value: "double_mogul", label: "猫跳地形适应（Mogul）" }
+          ]
+        };
+
+        const goalCatalog = {
+          single: {
+            single_carving: {
+              label: "单板刻滑（Carving）",
+              hours: "18-24 小时",
+              cycle: "4-6 周",
+              target: "蓝红道稳定大弧刻滑，出弯不甩尾"
+            },
+            single_switch: {
+              label: "反脚滑行（Switch）",
+              hours: "14-20 小时",
+              cycle: "4-5 周",
+              target: "反脚连续换刃，姿态对称可控"
+            },
+            single_ground: {
+              label: "地形公园基础（Park）",
+              hours: "20-28 小时",
+              cycle: "6-8 周",
+              target: "完成基础平花与小台安全起落"
+            },
+            single_freeride: {
+              label: "全山地自由滑行（Freeride）",
+              hours: "22-30 小时",
+              cycle: "6-8 周",
+              target: "多雪况多地形稳定路线选择"
+            }
+          },
+          double: {
+            double_parallel: {
+              label: "双板平行式高级稳定",
+              hours: "8-12 小时",
+              cycle: "2-4 周",
+              target: "平行式稳定通过蓝道并保持节奏"
+            },
+            double_carving: {
+              label: "双板卡宾进阶（Carving）",
+              hours: "16-24 小时",
+              cycle: "4-7 周",
+              target: "外板主导卡宾，形成完整压弯轨迹"
+            },
+            double_short_turn: {
+              label: "短回转节奏控制",
+              hours: "12-18 小时",
+              cycle: "3-5 周",
+              target: "短弯高频切换且上身稳定"
+            },
+            double_giant_slalom: {
+              label: "大回转竞速（GS）",
+              hours: "26-36 小时",
+              cycle: "7-9 周",
+              target: "完成竞速线路控制与出弯加速"
+            },
+            double_mogul: {
+              label: "猫跳地形适应（Mogul）",
+              hours: "22-30 小时",
+              cycle: "6-8 周",
+              target: "吸收-伸展节奏稳定通过猫跳道"
+            }
+          }
+        };
+
+        const resortData = {
+          chongli: [
+            { value: "wanlong", label: "万龙滑雪场", trails: "长龙道(蓝道), 银河道(红道)", zone: "东区刻滑训练区", crowd: "上午中等, 下午偏高" },
+            { value: "thaiwoo", label: "太舞滑雪小镇", trails: "林间道(蓝道), 飞雪道(红道)", zone: "南区基础技术区", crowd: "全天中等" },
+            { value: "yun-ding", label: "云顶滑雪公园", trails: "飞狐道(蓝道), 天际道(红道)", zone: "中轴回转区", crowd: "上午偏低, 下午中等" }
+          ],
+          jilin: [
+            { value: "beidahu", label: "北大湖滑雪度假区", trails: "银霜道(蓝道), 雪松道(红道)", zone: "1号缆车下站训练区", crowd: "上午偏低, 下午中等" },
+            { value: "songhua", label: "松花湖滑雪场", trails: "青松道(蓝道), 猎隼道(红道)", zone: "山谷进阶区", crowd: "全天中等" }
+          ],
+          harbin: [
+            { value: "yabuli", label: "亚布力滑雪旅游度假区", trails: "风车道(蓝道), 火炬道(红道)", zone: "阳坡技术区", crowd: "上午偏低, 下午偏高" },
+            { value: "maoershan", label: "帽儿山高山滑雪场", trails: "松涛道(蓝道), 劲风道(红道)", zone: "主雪道中段", crowd: "全天中低" }
+          ]
+        };
+
+        function fillResorts(cityKey) {
+          const list = resortData[cityKey] || [];
+          resortSelect.innerHTML = list.map((r) => `<option value="${r.value}">${r.label}</option>`).join("");
+        }
+
+        function getResortInfo() {
+          const list = resortData[citySelect.value] || [];
+          return list.find((r) => r.value === resortSelect.value) || list[0];
+        }
+
+        function syncGoalText() {
+          const discipline = disciplineSelect.value;
+          const options = goalOptionsByDiscipline[discipline];
+          goalSelect.innerHTML = options.map((item) => `<option value="${item.value}">${item.label}</option>`).join("");
+          const goalKey = goalSelect.value;
+          goalSearch.value = goalCatalog[discipline][goalKey].label;
+        }
+
+        function renderRoadmap(goalKey, info) {
+          const isCarving = goalKey === "single_carving" || goalKey === "double_carving";
+          const isGS = goalKey === "double_giant_slalom";
+          const isSwitch = goalKey === "single_switch";
+          const steps = isCarving
+            ? [
+                ["阶段1：外刃建立与上体稳定", "2-3次雪时"],
+                ["阶段2：换刃节奏与压强连续", "3-4次雪时"],
+                ["阶段3：中高速刻滑闭环", "4-5次雪时"]
+              ]
+            : isGS
+            ? [
+                ["阶段1：旗门前导线路记忆", "3-4次雪时"],
+                ["阶段2：入弯压板与出弯回收", "4-5次雪时"],
+                ["阶段3：竞速节奏固化", "5-6次雪时"]
+              ]
+            : isSwitch
+            ? [
+                ["阶段1：反脚基础刃感重建", "2-3次雪时"],
+                ["阶段2：反脚换刃稳定输出", "3-4次雪时"],
+                ["阶段3：正反脚连续切换", "4-5次雪时"]
+              ]
+            : [
+                ["阶段1：基础重心迁移", "2-3次雪时"],
+                ["阶段2：动作连续性与稳定度", "3-4次雪时"],
+                ["阶段3：目标动作固化", "3-5次雪时"]
+              ];
+
+          roadmapList.innerHTML = steps
+            .map(([text, week]) => `<li class="roadmap-item"><span>${text}</span><span class="roadmap-week">${week}</span></li>`)
+            .join("");
+
+          const todayItems = isCarving
+            ? [
+                "长弧外刃压板 6组 x 4趟",
+                "换刃节奏控制 5组 x 3趟",
+                "出弯重心回收 4组 x 4趟"
+              ]
+            : isGS
+            ? [
+                "旗门入弯点定位 6组 x 3趟",
+                "外板主导压强控制 5组 x 3趟",
+                "出弯加速与线路复盘 4组 x 3趟"
+              ]
+            : isSwitch
+            ? [
+                "反脚横滑刃感训练 6组 x 3趟",
+                "反脚连续换刃 5组 x 3趟",
+                "正反脚连贯滑行 4组 x 4趟"
+              ]
+            : [
+                "基础转弯稳定 6组 x 3趟",
+                "外板加压训练 5组 x 3趟",
+                "节奏衔接滑行 4组 x 4趟"
+              ];
+
+          todayList.innerHTML = todayItems
+            .map((item) => `<div class="match-item"><span>${item}</span><span class="match-badge">适合当前雪道练习</span></div>`)
+            .join("");
+
+          mapSuggest.innerHTML = `
+            <div class="map-route"><span>建议训练点位：</span><span>${info.zone}</span></div>
+            <div class="map-route"><span>推荐雪道：</span><span>${info.trails}</span></div>
+            <div class="map-route"><span>拥挤度提示：</span><span>${info.crowd}</span></div>
+          `;
+        }
+
+        function evaluatePlan() {
+          const file = planVideoInput.files && planVideoInput.files[0];
+          if (!file) {
+            planFileMsg.textContent = "请先上传你的滑行视频，再生成进阶方案。";
+            return;
+          }
+
+          const discipline = disciplineSelect.value;
+          const goalKey = goalSelect.value;
+          const info = getResortInfo();
+          const goalInfo = goalCatalog[discipline][goalKey];
+
+          planFileMsg.textContent = `读取视频：${file.name}`;
+          planProgress.style.display = "block";
+          planProgressBar.style.width = "0%";
+          planEvaluateBtn.disabled = true;
+          planEvaluateBtn.textContent = "逐帧评估中 0%";
+
+          analyzeVideoFileFrames(file, (progress) => {
+            planProgressBar.style.width = `${progress}%`;
+            planEvaluateBtn.textContent = `逐帧评估中 ${progress}%`;
+          })
+            .then((result) => {
+              planEvaluateBtn.disabled = false;
+              planEvaluateBtn.textContent = "评估并生成进阶计划";
+              planFileMsg.textContent = `评估完成：${result.sampledFrames} 帧 · ${info.label} · ${goalInfo.label}`;
+
+              currentState.textContent =
+                result.stabilityScore >= 82
+                  ? "基础稳定，转弯节奏可继续提速"
+                  : "换刃节奏偏慢，稳定性需加强";
+              targetState.textContent = goalInfo.target;
+              snowHours.textContent = goalInfo.hours;
+              planCycle.textContent = goalInfo.cycle;
+              renderRoadmap(goalKey, info);
+            })
+            .catch(() => {
+              planEvaluateBtn.disabled = false;
+              planEvaluateBtn.textContent = "评估并生成进阶计划";
+              planFileMsg.textContent = "视频逐帧评估失败，请更换文件后重试。";
+            });
+        }
+
+        citySelect.addEventListener("change", () => {
+          fillResorts(citySelect.value);
+          const info = getResortInfo();
+          mapSuggest.innerHTML = `
+            <div class="map-route"><span>建议训练点位：</span><span>${info.zone}</span></div>
+            <div class="map-route"><span>推荐雪道：</span><span>${info.trails}</span></div>
+            <div class="map-route"><span>拥挤度提示：</span><span>${info.crowd}</span></div>
+          `;
+        });
+
+        resortSelect.addEventListener("change", () => {
+          const info = getResortInfo();
+          mapSuggest.innerHTML = `
+            <div class="map-route"><span>建议训练点位：</span><span>${info.zone}</span></div>
+            <div class="map-route"><span>推荐雪道：</span><span>${info.trails}</span></div>
+            <div class="map-route"><span>拥挤度提示：</span><span>${info.crowd}</span></div>
+          `;
+        });
+
+        planVideoInput.addEventListener("change", () => {
+          const file = planVideoInput.files && planVideoInput.files[0];
+          planFileMsg.textContent = file ? `已选择视频：${file.name}` : "";
+        });
+
+        disciplineSelect.addEventListener("change", syncGoalText);
+        goalSelect.addEventListener("change", syncGoalText);
+        planEvaluateBtn.addEventListener("click", evaluatePlan);
+        fillResorts(citySelect.value);
+        syncGoalText();
+      }
+
+      function initializeGpsModule() {
+        const API_BASE = "http://127.0.0.1:8000";
+        const MIN_POINT_DIST_M = 4;
+        const MAX_ACCURACY_M = 80;
+
+        const mapEl = document.getElementById("gps-map");
+        const statusPill = document.getElementById("gps-status-pill");
+        const pointCountEl = document.getElementById("gps-point-count");
+        const distanceEl = document.getElementById("gps-distance");
+        const durationEl = document.getElementById("gps-duration");
+        const speedEl = document.getElementById("gps-speed");
+        const maxSpeedEl = document.getElementById("gps-max-speed");
+        const latEl = document.getElementById("gps-lat");
+        const lngEl = document.getElementById("gps-lng");
+        const altEl = document.getElementById("gps-alt");
+        const accuracyEl = document.getElementById("gps-accuracy");
+        const permissionTip = document.getElementById("gps-permission-tip");
+        const historyList = document.getElementById("gps-history-list");
+        const btnStart = document.getElementById("gps-btn-start");
+        const btnPause = document.getElementById("gps-btn-pause");
+        const btnStop = document.getElementById("gps-btn-stop");
+
+        let map = null;
+        let trackLine = null;
+        let currentMarker = null;
+        let startMarker = null;
+        let watchId = null;
+        let durationTimer = null;
+        let mapInitialized = false;
+
+        let state = "idle"; // idle | recording | paused
+        let sessionId = null;
+        let points = [];
+        let startTime = null;
+        let pausedElapsed = 0;
+        let pauseStarted = null;
+        let maxSpeedKmh = 0;
+        let activeHistoryId = null;
+
+        function haversineM(lat1, lng1, lat2, lng2) {
+          const r = 6371000;
+          const toRad = (d) => (d * Math.PI) / 180;
+          const dLat = toRad(lat2 - lat1);
+          const dLng = toRad(lng2 - lng1);
+          const a =
+            Math.sin(dLat / 2) ** 2 +
+            Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+          return r * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        }
+
+        function calcTotalDistance(pts) {
+          let total = 0;
+          for (let i = 1; i < pts.length; i++) {
+            total += haversineM(pts[i - 1].lat, pts[i - 1].lng, pts[i].lat, pts[i].lng);
+          }
+          return total;
+        }
+
+        function formatDuration(seconds) {
+          const s = Math.max(0, Math.floor(seconds));
+          const h = Math.floor(s / 3600);
+          const m = Math.floor((s % 3600) / 60);
+          const sec = s % 60;
+          if (h > 0) return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+          return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+        }
+
+        function formatDistance(m) {
+          if (m >= 1000) return `${(m / 1000).toFixed(2)} km`;
+          return `${Math.round(m)} m`;
+        }
+
+        function getElapsedSeconds() {
+          if (state === "recording" && startTime) {
+            return pausedElapsed + (Date.now() - startTime) / 1000;
+          }
+          return pausedElapsed;
+        }
+
+        function updateDurationDisplay() {
+          durationEl.textContent = formatDuration(getElapsedSeconds());
+        }
+
+        function updateStatsDisplay() {
+          const dist = calcTotalDistance(points);
+          distanceEl.textContent = formatDistance(dist);
+          pointCountEl.textContent = `${points.length} 个轨迹点`;
+          maxSpeedEl.textContent = `${maxSpeedKmh.toFixed(1)} km/h`;
+        }
+
+        function setStatus(text, cls) {
+          statusPill.textContent = text;
+          statusPill.className = "gps-status-pill" + (cls ? ` ${cls}` : "");
+        }
+
+        function initMap() {
+          if (mapInitialized) return;
+          map = L.map(mapEl, { zoomControl: true, attributionControl: true }).setView([40.9, 115.5], 13);
+          L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; CARTO',
+            subdomains: "abcd",
+            maxZoom: 19,
+          }).addTo(map);
+          trackLine = L.polyline([], {
+            color: "#2eff88",
+            weight: 4,
+            opacity: 0.9,
+            lineJoin: "round",
+          }).addTo(map);
+          mapInitialized = true;
+          setTimeout(() => map.invalidateSize(), 200);
+        }
+
+        function refreshTrackOnMap() {
+          if (!map || points.length === 0) return;
+          const latlngs = points.map((p) => [p.lat, p.lng]);
+          trackLine.setLatLngs(latlngs);
+
+          if (currentMarker) map.removeLayer(currentMarker);
+          const last = points[points.length - 1];
+          currentMarker = L.circleMarker([last.lat, last.lng], {
+            radius: 8,
+            color: "#00d4ff",
+            fillColor: "#00d4ff",
+            fillOpacity: 0.9,
+            weight: 2,
+          }).addTo(map).bindPopup("当前位置");
+
+          if (!startMarker && points.length > 0) {
+            const first = points[0];
+            startMarker = L.circleMarker([first.lat, first.lng], {
+              radius: 7,
+              color: "#2eff88",
+              fillColor: "#2eff88",
+              fillOpacity: 0.85,
+              weight: 2,
+            }).addTo(map).bindPopup("起点");
+          }
+
+          if (latlngs.length === 1) {
+            map.setView(latlngs[0], 16);
+          } else {
+            map.fitBounds(trackLine.getBounds(), { padding: [40, 40], maxZoom: 17 });
+          }
+        }
+
+        function resetTrackVisuals() {
+          if (trackLine) trackLine.setLatLngs([]);
+          if (currentMarker) { map.removeLayer(currentMarker); currentMarker = null; }
+          if (startMarker) { map.removeLayer(startMarker); startMarker = null; }
+        }
+
+        async function apiCall(path, options) {
+          try {
+            const res = await fetch(`${API_BASE}${path}`, {
+              headers: { "Content-Type": "application/json" },
+              ...options,
+            });
+            if (!res.ok) return null;
+            return await res.json();
+          } catch {
+            return null;
+          }
+        }
+
+        function loadLocalHistory() {
+          try {
+            return JSON.parse(localStorage.getItem("skinova_gps_sessions") || "[]");
+          } catch {
+            return [];
+          }
+        }
+
+        function saveLocalHistory(sessions) {
+          localStorage.setItem("skinova_gps_sessions", JSON.stringify(sessions));
+        }
+
+        function saveSessionLocally(session) {
+          const history = loadLocalHistory();
+          const idx = history.findIndex((s) => s.session_id === session.session_id);
+          if (idx >= 0) history[idx] = session;
+          else history.unshift(session);
+          saveLocalHistory(history.slice(0, 50));
+        }
+
+        async function syncPointToBackend(point) {
+          if (!sessionId) return;
+          await apiCall(`/gps/session/${sessionId}/point`, {
+            method: "POST",
+            body: JSON.stringify(point),
+          });
+        }
+
+        function shouldAcceptPoint(lat, lng, accuracy) {
+          if (accuracy && accuracy > MAX_ACCURACY_M) return false;
+          if (points.length === 0) return true;
+          const last = points[points.length - 1];
+          return haversineM(last.lat, last.lng, lat, lng) >= MIN_POINT_DIST_M;
+        }
+
+        function onPosition(pos) {
+          const { latitude: lat, longitude: lng, altitude, speed, accuracy } = pos.coords;
+          latEl.textContent = lat.toFixed(6);
+          lngEl.textContent = lng.toFixed(6);
+          altEl.textContent = altitude != null ? `${Math.round(altitude)} m` : "--";
+          accuracyEl.textContent = accuracy != null ? `±${Math.round(accuracy)} m` : "--";
+
+          const speedKmh = speed != null && speed >= 0 ? speed * 3.6 : 0;
+          speedEl.textContent = `${speedKmh.toFixed(1)} km/h`;
+
+          if (state !== "recording") return;
+          if (!shouldAcceptPoint(lat, lng, accuracy)) return;
+
+          const point = {
+            lat,
+            lng,
+            altitude: altitude ?? null,
+            speed: Math.round(speedKmh * 10) / 10,
+            accuracy: accuracy ?? null,
+            timestamp: new Date().toISOString(),
+          };
+
+          points.push(point);
+          if (speedKmh > maxSpeedKmh) maxSpeedKmh = speedKmh;
+
+          updateStatsDisplay();
+          refreshTrackOnMap();
+          syncPointToBackend(point);
+        }
+
+        function onPositionError(err) {
+          const msgs = {
+            1: "定位权限被拒绝，请在浏览器设置中允许位置访问。",
+            2: "无法获取位置信息，请检查 GPS 是否开启。",
+            3: "定位请求超时，请移至开阔区域后重试。",
+          };
+          permissionTip.textContent = msgs[err.code] || `定位错误：${err.message}`;
+        }
+
+        function startWatch() {
+          if (!navigator.geolocation) {
+            permissionTip.textContent = "当前浏览器不支持 Geolocation API，请使用 Chrome / Safari 等现代浏览器。";
+            return false;
+          }
+          watchId = navigator.geolocation.watchPosition(onPosition, onPositionError, {
+            enableHighAccuracy: true,
+            maximumAge: 2000,
+            timeout: 15000,
+          });
+          return true;
+        }
+
+        function stopWatch() {
+          if (watchId != null) {
+            navigator.geolocation.clearWatch(watchId);
+            watchId = null;
+          }
+        }
+
+        function startDurationTimer() {
+          if (durationTimer) clearInterval(durationTimer);
+          durationTimer = setInterval(updateDurationDisplay, 1000);
+        }
+
+        function stopDurationTimer() {
+          if (durationTimer) clearInterval(durationTimer);
+          durationTimer = null;
+        }
+
+        async function startRecording() {
+          initMap();
+          points = [];
+          maxSpeedKmh = 0;
+          pausedElapsed = 0;
+          pauseStarted = null;
+          resetTrackVisuals();
+          updateStatsDisplay();
+          updateDurationDisplay();
+
+          const apiResult = await apiCall("/gps/session/start", {
+            method: "POST",
+            body: JSON.stringify({}),
+          });
+          sessionId = apiResult ? apiResult.session_id : `local-${Date.now()}`;
+
+          startTime = Date.now();
+          state = "recording";
+          setStatus("● 录制中", "recording");
+          permissionTip.textContent = "正在实时记录 GPS 轨迹，请保持屏幕常亮以获得连续轨迹。";
+
+          btnStart.disabled = true;
+          btnPause.disabled = false;
+          btnStop.disabled = false;
+
+          if (!startWatch()) return;
+
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              onPosition(pos);
+              map.setView([pos.coords.latitude, pos.coords.longitude], 16);
+            },
+            onPositionError,
+            { enableHighAccuracy: true, timeout: 10000 }
+          );
+
+          startDurationTimer();
+        }
+
+        function pauseRecording() {
+          if (state !== "recording") return;
+          state = "paused";
+          pauseStarted = Date.now();
+          pausedElapsed += (pauseStarted - startTime) / 1000;
+          setStatus("⏸ 已暂停", "paused");
+          btnPause.textContent = "继续";
+          permissionTip.textContent = "记录已暂停，点击「继续」恢复轨迹采集。";
+        }
+
+        function resumeRecording() {
+          if (state !== "paused") return;
+          state = "recording";
+          startTime = Date.now();
+          pauseStarted = null;
+          setStatus("● 录制中", "recording");
+          btnPause.textContent = "暂停";
+          permissionTip.textContent = "已恢复录制，轨迹继续追加中。";
+        }
+
+        async function stopRecording() {
+          if (state === "idle") return;
+
+          stopWatch();
+          stopDurationTimer();
+
+          const finalDuration = Math.round(getElapsedSeconds());
+          const finalDistance = calcTotalDistance(points);
+
+          if (sessionId && !sessionId.startsWith("local-")) {
+            await apiCall(`/gps/session/${sessionId}/stop`, { method: "POST" });
+          }
+
+          const session = {
+            session_id: sessionId,
+            name: `滑行 ${new Date().toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })}`,
+            status: "completed",
+            started_at: points[0]?.timestamp || new Date().toISOString(),
+            ended_at: new Date().toISOString(),
+            points: [...points],
+            distance_m: Math.round(finalDistance * 10) / 10,
+            max_speed_kmh: Math.round(maxSpeedKmh * 10) / 10,
+            duration_s: finalDuration,
+          };
+
+          saveSessionLocally(session);
+          renderHistory();
+
+          state = "idle";
+          sessionId = null;
+          startTime = null;
+          pausedElapsed = 0;
+
+          setStatus("已完成", "");
+          permissionTip.textContent = `本次滑行 ${formatDistance(finalDistance)}，用时 ${formatDuration(finalDuration)}，轨迹已保存。`;
+
+          btnStart.disabled = false;
+          btnPause.disabled = true;
+          btnStop.disabled = true;
+          btnPause.textContent = "暂停";
+        }
+
+        function renderHistoryOnMap(session) {
+          initMap();
+          resetTrackVisuals();
+          points = [];
+          activeHistoryId = session.session_id;
+
+          if (!session.points || session.points.length === 0) return;
+
+          points = session.points;
+          trackLine.setLatLngs(points.map((p) => [p.lat, p.lng]));
+
+          const first = points[0];
+          const last = points[points.length - 1];
+          startMarker = L.circleMarker([first.lat, first.lng], {
+            radius: 7, color: "#2eff88", fillColor: "#2eff88", fillOpacity: 0.85, weight: 2,
+          }).addTo(map).bindPopup("起点");
+
+          currentMarker = L.circleMarker([last.lat, last.lng], {
+            radius: 8, color: "#ff6b6b", fillColor: "#ff6b6b", fillOpacity: 0.85, weight: 2,
+          }).addTo(map).bindPopup("终点");
+
+          map.fitBounds(trackLine.getBounds(), { padding: [40, 40], maxZoom: 17 });
+
+          distanceEl.textContent = formatDistance(session.distance_m);
+          durationEl.textContent = formatDuration(session.duration_s);
+          maxSpeedEl.textContent = `${(session.max_speed_kmh || 0).toFixed(1)} km/h`;
+          speedEl.textContent = "--";
+          latEl.textContent = last.lat.toFixed(6);
+          lngEl.textContent = last.lng.toFixed(6);
+        }
+
+        async function renderHistory() {
+          let sessions = loadLocalHistory();
+
+          const apiResult = await apiCall("/gps/sessions");
+          if (apiResult && apiResult.sessions) {
+            const localIds = new Set(sessions.map((s) => s.session_id));
+            apiResult.sessions.forEach((s) => {
+              if (!localIds.has(s.session_id)) sessions.push(s);
+            });
+            sessions.sort((a, b) => (b.started_at || "").localeCompare(a.started_at || ""));
+          }
+
+          if (sessions.length === 0) {
+            historyList.innerHTML = '<div class="gps-permission-tip">暂无记录，完成一次滑行后将显示在此</div>';
+            return;
+          }
+
+          historyList.innerHTML = sessions
+            .map(
+              (s) => `
+              <div class="gps-history-item${activeHistoryId === s.session_id ? " active" : ""}" data-session-id="${s.session_id}">
+                <div class="gps-history-top">
+                  <span>${s.name || "滑行记录"}</span>
+                  <span>${formatDistance(s.distance_m || 0)}</span>
+                </div>
+                <div class="gps-history-meta">
+                  <span>${formatDuration(s.duration_s || 0)}</span>
+                  <span>最高 ${(s.max_speed_kmh || 0).toFixed(1)} km/h</span>
+                  <span>${s.point_count || (s.points ? s.points.length : 0)} 点</span>
+                </div>
+              </div>`
+            )
+            .join("");
+
+          historyList.querySelectorAll(".gps-history-item").forEach((el) => {
+            el.addEventListener("click", () => {
+              const id = el.dataset.sessionId;
+              const session = sessions.find((s) => s.session_id === id);
+              if (session) {
+                if (!session.points || session.points.length === 0) {
+                  apiCall(`/gps/session/${id}`).then((full) => {
+                    if (full) renderHistoryOnMap(full);
+                  });
+                } else {
+                  renderHistoryOnMap(session);
+                }
+                historyList.querySelectorAll(".gps-history-item").forEach((i) => i.classList.remove("active"));
+                el.classList.add("active");
+              }
+            });
+          });
+        }
+
+        btnStart.addEventListener("click", startRecording);
+        btnPause.addEventListener("click", () => {
+          if (state === "recording") pauseRecording();
+          else if (state === "paused") resumeRecording();
+        });
+        btnStop.addEventListener("click", stopRecording);
+
+        tabButtons.find((b) => b.dataset.tab === "tab-gps")?.addEventListener("click", () => {
+          setTimeout(() => {
+            initMap();
+            if (map) map.invalidateSize();
+          }, 300);
+        });
+
+        renderHistory();
+      }
+
+      function bindBeginnerInteractions() {
+        const boardModeTexts = {
+          "单板模式": {
+            title: "单板专项：动态刃压与踝关节离心控制",
+            summary: "起源：现代单板滑雪在20世纪60-70年代由冲浪与滑板文化演化而来。物理学原理：以侧向平衡为核心，通过刃角-压强耦合与角动量管理完成转弯。适合人群：有滑板/冲浪基础、追求自由度、偏好核心对抗训练的年轻人。初学者经济成本分析：入门阶段摔倒率与试错成本更高，但AI模拟发力反馈可降低动作迁移成本，缩短达到稳定换刃的时间。"
+          },
+          "双板模式": {
+            title: "双板专项：纵向控制与关节链协同",
+            summary: "起源：现代双板技术源于阿尔卑斯体系，历经竞速、回转与教学系统化发展。物理学原理：以纵向压力分配与左右板协同受力为核心，依赖向心力控制半径与速度。适合人群：追求速度感、强调全身协调、希望建立系统滑行能力的训练者。初学者经济成本分析：装备与课程投入更线性，但进阶需要大量动作记忆；AI实时诊断可减少空洞练习次数，提升单位训练投入产出比。"
+          }
+        };
+
+        boardCards.forEach((card) => {
+          card.style.cursor = "pointer";
+          card.addEventListener("click", () => {
+            const modeName = card.querySelector("span") ? card.querySelector("span").textContent.trim() : "单板模式";
+            const content = boardModeTexts[modeName] || boardModeTexts["单板模式"];
+            card.classList.add("board-zoom-enter");
+            setTimeout(() => card.classList.remove("board-zoom-enter"), 320);
+            openAnatomyOverlay(modeName, content);
+          });
+        });
+      }
+
+      function bindWaterfallPlayback() {
+        videoCards.forEach((card, index) => {
+          card.style.cursor = "pointer";
+          card.addEventListener("click", (event) => {
+            if (event.target.closest(".mini-3d")) return;
+            openImmersiveModal(index);
+          });
+        });
+      }
+
+      function createAnatomyOverlay() {
+        const overlay = document.createElement("div");
+        overlay.id = "anatomy-overlay";
+        overlay.className = "overlay-shell";
+        overlay.innerHTML = `
+          <div class="overlay-backdrop"></div>
+          <div class="overlay-panel anatomy-panel page-enter">
+            <button class="overlay-close" data-close-overlay="anatomy-overlay">×</button>
+            <div class="overlay-header">
+              <h3 id="anatomy-title">单板专项：动态刃压与踝关节离心控制</h3>
+              <p id="board-summary">单板（滑雪）属于侧向平衡运动，适合有滑板/冲浪基础、追求自由度与核心力量对抗的年轻人。单板学习曲线陡峭，AI模拟发力感能显著降低其转换成本。</p>
+            </div>
+            <button class="back-to-menu" data-close-overlay="anatomy-overlay">返回主选单</button>
+            <div class="anatomy-layout">
+              <div class="anatomy-image-wrap">
+                <img class="anatomy-base-image" src="https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=1400&q=80" alt="人体线条图">
+                <div class="scanline-layer"></div>
+                <button class="hotspot pulse-dot hs-core active" data-part="core" aria-label="核心区"></button>
+                <button class="hotspot pulse-dot hs-front" data-part="front" aria-label="轴承前侧"></button>
+                <button class="hotspot pulse-dot hs-joint" data-part="joint" aria-label="关节链"></button>
+              </div>
+              <div class="anatomy-info anatomy-sidepanel">
+                <h4 id="authority-title">权威教学对应 · 核心稳定链</h4>
+                <p id="authority-text">腹横肌与多裂肌在弧线建立期维持躯干抗旋，减少骨盆相对滑移，保证压力线从髋部向雪板外刃稳定传导。</p>
+                <div class="authority-video">
+                  <iframe
+                    id="authority-video"
+                    src="//player.bilibili.com/player.html?bvid=BV1G8411F7id"
+                    title="教学视频"
+                    loading="lazy"
+                    sandbox="allow-scripts allow-same-origin allow-presentation"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen
+                  ></iframe>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(overlay);
+
+        document.querySelectorAll('[data-close-overlay="anatomy-overlay"]').forEach((btn) => {
+          btn.addEventListener("click", closeAnatomyOverlay);
+        });
+
+        const teachingMap = {
+          core: {
+            title: "权威教学对应 · 核心稳定链",
+            text: "腹横肌与多裂肌在弧线建立期维持躯干抗旋，减少骨盆相对滑移，保证压力线从髋部向雪板外刃稳定传导。"
+          },
+          front: {
+            title: "权威教学对应 · 轴承前侧动力学",
+            text: "股四头肌在转弯建立阶段以向心收缩控制膝关节伸展速率，同时配合胫骨前移形成可控前压，确保雪板接触面不发生瞬时失载。"
+          },
+          joint: {
+            title: "权威教学对应 · 关节链协同控制",
+            text: "踝-膝-髋三关节需保持同频相位差，腓肠肌与比目鱼肌在刃转瞬间承担离心制动，防止角加速度过冲并维持刃压连续性。"
+          }
+        };
+
+        overlay.querySelectorAll(".hotspot").forEach((spot) => {
+          spot.addEventListener("click", () => {
+            const part = spot.dataset.part;
+            const content = teachingMap[part];
+            overlay.querySelectorAll(".hotspot").forEach((s) => s.classList.remove("active"));
+            spot.classList.add("active");
+            document.getElementById("authority-title").textContent = content.title;
+            document.getElementById("authority-text").textContent = content.text;
+            overlay.querySelector(".anatomy-sidepanel").classList.add("open");
+          });
+        });
+      }
+
+      function openAnatomyOverlay(modeName, title) {
+        const overlay = document.getElementById("anatomy-overlay");
+        const t = document.getElementById("anatomy-title");
+        const boardSummary = document.getElementById("board-summary");
+        t.textContent = title.title;
+        boardSummary.textContent = title.summary;
+        const sidePanel = overlay.querySelector(".anatomy-sidepanel");
+        sidePanel.classList.remove("open");
+        overlay.classList.add("open");
+        document.body.style.overflow = "hidden";
+      }
+
+      function closeAnatomyOverlay() {
+        const overlay = document.getElementById("anatomy-overlay");
+        overlay.classList.remove("open");
+        document.body.style.overflow = "";
+      }
+
+      function createImmersiveModal() {
+        const modal = document.createElement("div");
+        modal.id = "immersive-modal";
+        modal.className = "overlay-shell";
+        modal.innerHTML = `
+          <div class="overlay-backdrop" data-close-overlay="immersive-modal"></div>
+          <div class="overlay-panel immersive-panel">
+            <button class="overlay-close" data-close-overlay="immersive-modal">×</button>
+            <div class="immersive-layout">
+              <div class="immersive-video">
+                <iframe
+                  id="immersive-frame"
+                  src="//player.bilibili.com/player.html?bvid=BV1G8411F7id"
+                  title="沉浸式播放"
+                  loading="lazy"
+                  sandbox="allow-scripts allow-same-origin allow-presentation"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowfullscreen
+                ></iframe>
+              </div>
+              <div class="immersive-analysis">
+                <h4>受力3D动图</h4>
+                <div class="force-3d-box">
+                  <div class="ring ring-1"></div>
+                  <div class="ring ring-2"></div>
+                  <div class="ring ring-3"></div>
+                  <div class="axis-line axis-x"></div>
+                  <div class="axis-line axis-y"></div>
+                  <div class="glow-node"></div>
+                </div>
+                <p>实时剖析：外刃承压上升，踝-膝-髋三关节扭矩正在趋于稳定。</p>
+              </div>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(modal);
+        document.querySelectorAll('[data-close-overlay="immersive-modal"]').forEach((btn) => {
+          btn.addEventListener("click", closeImmersiveModal);
+        });
+      }
+
+      function openImmersiveModal(index) {
+        const modal = document.getElementById("immersive-modal");
+        const frame = document.getElementById("immersive-frame");
+        const playlist = [
+          "//player.bilibili.com/player.html?bvid=BV1G8411F7id",
+          "//player.bilibili.com/player.html?bvid=BV1mN4y1X7jM",
+          "//player.bilibili.com/player.html?bvid=BV1xK4y1M7QW"
+        ];
+        frame.src = playlist[index % playlist.length];
+        modal.classList.add("open");
+        document.body.style.overflow = "hidden";
+      }
+
+      function closeImmersiveModal() {
+        const modal = document.getElementById("immersive-modal");
+        const frame = document.getElementById("immersive-frame");
+        modal.classList.remove("open");
+        frame.src = "";
+        document.body.style.overflow = "";
+      }
+
+      function injectDynamicStyles() {
+        const style = document.createElement("style");
+        style.textContent = `
+          .analysis-toast {
+            position: fixed;
+            right: 24px;
+            top: 24px;
+            z-index: 60;
+            width: min(400px, 90vw);
+            border-radius: 14px;
+            padding: 12px 14px;
+            background: rgba(12, 20, 26, 0.88);
+            border: 1px solid rgba(0, 212, 255, 0.48);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35), 0 0 18px rgba(0, 212, 255, 0.25);
+            backdrop-filter: blur(10px);
+            display: grid;
+            gap: 6px;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+          }
+          .analysis-toast strong { color: #d5f6ff; font-size: 0.95rem; }
+          .analysis-toast span { color: #9ab7cb; font-size: 0.84rem; line-height: 1.5; }
+          .analysis-toast.hide { opacity: 0; transform: translateY(-6px); }
+
+          .overlay-shell {
+            position: fixed;
+            inset: 0;
+            z-index: 70;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.28s ease;
+          }
+          .overlay-shell.open {
+            opacity: 1;
+            pointer-events: auto;
+          }
+          .overlay-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(4px);
+          }
+          .overlay-panel {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -46%);
+            width: min(1120px, 94vw);
+            max-height: 88vh;
+            overflow: auto;
+            border-radius: 16px;
+            background: rgba(14, 16, 18, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 24px 44px rgba(0, 0, 0, 0.48), 0 0 26px rgba(0, 212, 255, 0.2);
+            padding: 18px;
+          }
+          .page-enter {
+            animation: panelSlideIn 0.35s ease;
+          }
+          .overlay-close {
+            position: absolute;
+            right: 12px;
+            top: 10px;
+            width: 34px;
+            height: 34px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.08);
+            color: #eaf7ff;
+            font-size: 22px;
+            line-height: 1;
+            cursor: pointer;
+          }
+
+          .overlay-header h3 {
+            margin: 0;
+            font-size: 1.1rem;
+            color: rgba(232, 246, 255, 0.92);
+            letter-spacing: 0.02em;
+          }
+          .overlay-header p {
+            margin: 6px 0 14px;
+            color: rgba(151, 180, 199, 0.84);
+            font-size: 0.9rem;
+            letter-spacing: 0.02em;
+          }
+          .back-to-menu {
+            border: 1px solid rgba(255, 255, 255, 0.26);
+            color: rgba(231, 245, 255, 0.9);
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 8px 12px;
+            margin-bottom: 12px;
+            cursor: pointer;
+          }
+
+          .anatomy-layout {
+            display: grid;
+            grid-template-columns: 1.04fr 1fr;
+            gap: 14px;
+          }
+          .anatomy-image-wrap {
+            position: relative;
+            border-radius: 14px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            background: rgba(255, 255, 255, 0.04);
+          }
+          .anatomy-base-image {
+            width: 100%;
+            height: 100%;
+            min-height: 540px;
+            object-fit: cover;
+            display: block;
+            filter: saturate(1.05) contrast(1.04) brightness(0.9);
+          }
+          .scanline-layer {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background: repeating-linear-gradient(
+              to bottom,
+              rgba(255, 255, 255, 0.07) 0px,
+              rgba(255, 255, 255, 0.07) 1px,
+              rgba(0, 0, 0, 0) 1px,
+              rgba(0, 0, 0, 0) 7px
+            );
+            mix-blend-mode: screen;
+            opacity: 0.35;
+            animation: scanMove 3s linear infinite;
+          }
+          .hotspot {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            border: none;
+            background: transparent;
+          }
+          .pulse-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: rgba(0, 212, 255, 0.95);
+            box-shadow: 0 0 0 0 rgba(0, 212, 255, 0.65);
+            animation: pulseDot 1.7s infinite;
+          }
+          .pulse-dot::after {
+            content: "";
+            position: absolute;
+            inset: -8px;
+            border-radius: 50%;
+            border: 1px solid rgba(46, 255, 136, 0.66);
+            opacity: 0.8;
+          }
+          .hotspot.active {
+            background: rgba(46, 255, 136, 0.95);
+            box-shadow: 0 0 0 0 rgba(46, 255, 136, 0.7);
+            animation-name: pulseDotActive;
+          }
+          .hs-core { left: 50%; top: 40%; }
+          .hs-front { left: 56%; top: 56%; }
+          .hs-joint { left: 48%; top: 73%; }
+          .anatomy-info {
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            background: rgba(255, 255, 255, 0.05);
+            padding: 14px;
+            display: grid;
+            align-content: start;
+            gap: 10px;
+          }
+          .anatomy-sidepanel {
+            opacity: 0;
+            transform: translateX(14px);
+            transition: opacity 0.28s ease, transform 0.28s ease;
+            background: rgba(8, 16, 22, 0.58);
+            backdrop-filter: blur(10px);
+          }
+          .anatomy-sidepanel.open {
+            opacity: 1;
+            transform: translateX(0);
+          }
+          .anatomy-info h4 {
+            margin: 0;
+            color: rgba(217, 248, 255, 0.92);
+            font-size: 1rem;
+            letter-spacing: 0.02em;
+          }
+          .anatomy-info p {
+            margin: 0;
+            color: rgba(170, 193, 209, 0.84);
+            line-height: 1.65;
+            font-size: 0.9rem;
+            letter-spacing: 0.01em;
+          }
+          .authority-video iframe {
+            width: 100%;
+            min-height: 300px;
+            border: 0;
+            border-radius: 12px;
+            background: #000;
+          }
+
+          .immersive-layout {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 14px;
+          }
+          .immersive-video iframe {
+            width: 100%;
+            min-height: 500px;
+            border: none;
+            border-radius: 12px;
+            background: #000;
+          }
+          .immersive-analysis {
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            background: rgba(255, 255, 255, 0.05);
+            padding: 14px;
+          }
+          .immersive-analysis h4 {
+            margin: 0 0 12px;
+            color: #dbf8ff;
+            font-size: 1rem;
+          }
+          .immersive-analysis p {
+            color: #a7c0d1;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            margin-top: 12px;
+          }
+          .force-3d-box {
+            position: relative;
+            height: 340px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            background:
+              radial-gradient(circle at center, rgba(0, 212, 255, 0.11), transparent 52%),
+              linear-gradient(145deg, rgba(46, 255, 136, 0.06), rgba(0, 212, 255, 0.1)),
+              rgba(4, 8, 12, 0.8);
+            overflow: hidden;
+          }
+          .ring {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            border-radius: 50%;
+            border: 1px solid rgba(0, 212, 255, 0.5);
+            transform-style: preserve-3d;
+          }
+          .ring-1 {
+            width: 180px; height: 180px; margin: -90px 0 0 -90px;
+            animation: spin3d 5.5s linear infinite;
+          }
+          .ring-2 {
+            width: 132px; height: 132px; margin: -66px 0 0 -66px;
+            border-color: rgba(46, 255, 136, 0.52);
+            animation: spin3dReverse 4.3s linear infinite;
+          }
+          .ring-3 {
+            width: 84px; height: 84px; margin: -42px 0 0 -42px;
+            animation: spin3d 2.8s linear infinite;
+          }
+          .axis-line {
+            position: absolute;
+            left: 50%; top: 50%;
+            background: rgba(255, 255, 255, 0.28);
+            transform-origin: center;
+          }
+          .axis-x {
+            width: 220px; height: 1px; margin-left: -110px;
+            animation: pulseAxis 2.4s ease-in-out infinite;
+          }
+          .axis-y {
+            width: 1px; height: 220px; margin-top: -110px;
+            animation: pulseAxis 2.4s ease-in-out infinite reverse;
+          }
+          .glow-node {
+            position: absolute;
+            left: 50%; top: 50%;
+            width: 16px; height: 16px;
+            margin: -8px 0 0 -8px;
+            border-radius: 50%;
+            background: #2eff88;
+            box-shadow: 0 0 26px rgba(46, 255, 136, 1);
+            animation: nodePulse 1.15s ease-in-out infinite;
+          }
+          @keyframes spin3d {
+            from { transform: translate(-50%, -50%) rotateX(62deg) rotateZ(0deg); }
+            to { transform: translate(-50%, -50%) rotateX(62deg) rotateZ(360deg); }
+          }
+          @keyframes spin3dReverse {
+            from { transform: translate(-50%, -50%) rotateY(68deg) rotateZ(360deg); }
+            to { transform: translate(-50%, -50%) rotateY(68deg) rotateZ(0deg); }
+          }
+          @keyframes nodePulse {
+            0%, 100% { transform: scale(1); opacity: 0.7; }
+            50% { transform: scale(1.32); opacity: 1; }
+          }
+          @keyframes pulseAxis {
+            0%, 100% { opacity: 0.35; }
+            50% { opacity: 0.8; }
+          }
+          @keyframes scanMove {
+            from { transform: translateY(-24px); }
+            to { transform: translateY(24px); }
+          }
+          @keyframes pulseDot {
+            0% { box-shadow: 0 0 0 0 rgba(0, 212, 255, 0.62); }
+            70% { box-shadow: 0 0 0 18px rgba(0, 212, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 212, 255, 0); }
+          }
+          @keyframes pulseDotActive {
+            0% { box-shadow: 0 0 0 0 rgba(46, 255, 136, 0.72); }
+            70% { box-shadow: 0 0 0 18px rgba(46, 255, 136, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(46, 255, 136, 0); }
+          }
+          @keyframes panelSlideIn {
+            from { transform: translate(-50%, -43%); opacity: 0; }
+            to { transform: translate(-50%, -46%); opacity: 1; }
+          }
+          .board-zoom-enter {
+            transform: scale(1.1);
+            transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+            z-index: 2;
+          }
+
+          @media (max-width: 980px) {
+            .anatomy-layout,
+            .immersive-layout {
+              grid-template-columns: 1fr;
+            }
+            .anatomy-base-image { min-height: 420px; }
+            .immersive-video iframe { min-height: 340px; }
+            .force-3d-box { height: 240px; }
+          }
+        `;
+        document.head.appendChild(style);
+      }
+    })();
+  </script>
+</body>
+</html>
