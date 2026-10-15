@@ -1,0 +1,86 @@
+[
+  {
+    "slug": "how-to-film-skiing",
+    "intent": "Informational · video review",
+    "title": "How to film skiing for useful feedback",
+    "description": "A practical filming checklist: choose a safe position, keep the skier visible and capture enough context for an instructor to review.",
+    "sections": [
+      {
+        "heading": "Start with one question",
+        "text": "Before recording, decide what you want to discuss. A clip of an entire run can contain more information than you need. A focused question, such as whether your turns look consistent from one side to the other, gives the reviewer a useful starting point. Record the skier's stated level, terrain and conditions separately. These details help explain what the camera can and cannot show."
+      },
+      {
+        "heading": "Choose a safe place to film",
+        "text": "Ask a qualified instructor or resort staff member where filming is appropriate. The person recording should stand in a permitted location with a clear view, outside the flow of traffic. Do not stop below a blind crest, block a trail or ask someone to ski beyond their ability for the camera. Follow local rules and ask permission before filming other people. If the location is unsuitable, skip the recording."
+      },
+      {
+        "heading": "Keep the skier and the terrain visible",
+        "text": "Keep the whole skier in the frame, including the skis and the ground beneath them. Avoid zooming so tightly that the skis disappear during a turn. A steady view with a little space around the skier is often easier to interpret than a dramatic close-up. Capture a short sequence of turns rather than isolated still frames. A single camera view cannot measure every movement accurately; perspective, slope and camera motion all affect what appears on screen."
+      },
+      {
+        "heading": "Check the clip before uploading",
+        "text": "Play the recording locally. Confirm that the intended skier is visible, that the clip is not rotated incorrectly and that the file is reasonably short. Export a smaller copy if necessary and keep the original. Ski Pro accepts MP4, MOV and WebM files up to 30 MB. Its inspection endpoint checks decodability and basic metadata when OpenCV is installed. It does not judge technique, calculate joint angles or generate a performance score."
+      },
+      {
+        "heading": "Turn the clip into a conversation",
+        "text": "Write down one observation and one question, then review the clip with an instructor. Separate what you can see from what you think caused it. For example, 'the two turns look different in this view' is an observation; an explanation about pressure or balance requires more context. Save the resulting practice goal in your training journal and record a comparable clip later. Compare the conditions as well as the footage."
+      }
+    ]
+  },
+  {
+    "slug": "ski-training-journal",
+    "intent": "Informational · reflection",
+    "title": "What to write in a ski training journal",
+    "description": "Build a useful ski journal with a simple record of conditions, practice time, one observation and a realistic goal for the next session.",
+    "sections": [
+      {
+        "heading": "Keep the record short enough to repeat",
+        "text": "A useful journal is one you keep using. You do not need a detailed account of every turn. Start with the date, approximate time spent practising, your stated skill level and the terrain you used. Add conditions in your own words: visibility, snow surface and how crowded the area felt. These notes provide context when two sessions feel very different."
+      },
+      {
+        "heading": "Separate the plan from what happened",
+        "text": "Write down the intention before the session. Afterwards, record the minutes you actually practised and what you covered. If the weather changed or you felt tired, say so. Completing less than planned is information, not a failure. Ski Pro stores the original plan and lets you attach a separate reflection, so the plan does not become an inaccurate account of the activity."
+      },
+      {
+        "heading": "Choose one observable detail",
+        "text": "Describe something you noticed without turning it into a diagnosis. You might record that you could repeat a familiar turn sequence more consistently, that one direction felt less comfortable, or that you needed more breaks than expected. If you have a short video, note the part you want an instructor to explain. Avoid making conclusions about forces or joint movement from an unsupported visual impression."
+      },
+      {
+        "heading": "Use effort as context, not a competition",
+        "text": "A simple one-to-ten effort rating can help you remember how demanding the session felt. It is a subjective note, not a medical measurement or a score against other skiers. Consider it alongside duration and conditions. If you feel pain or unusual symptoms, stop the activity and seek appropriate help rather than trying to improve the number in your journal."
+      },
+      {
+        "heading": "End with a next step",
+        "text": "Finish with one question or a small goal for your next lesson. A good next step could be to ask your instructor for feedback on a familiar turn sequence or repeat a drill they have already taught you. Review several entries to look for recurring questions. Ski Pro can export your recent journal entries as CSV for your own analysis. Keep these self-reported records separate from measured performance data; a longer session alone does not prove that technique improved."
+      }
+    ]
+  },
+  {
+    "slug": "beginner-ski-practice-plan",
+    "intent": "Informational · session planning",
+    "title": "How to plan a beginner ski practice session",
+    "description": "Organize a beginner session around familiar terrain, a small practice goal, regular pauses and a brief reflection with your instructor.",
+    "sections": [
+      {
+        "heading": "Make preparation part of the session",
+        "text": "A practice plan starts before the first run. Check opening information, weather, equipment and the location of the meeting area. If you are new to skiing, book instruction and ask which terrain is appropriate for your level. A website cannot assess the snow, your equipment or your ability in person. Use a written plan to organize the session, while the instructor and resort guidance determine what you should do on snow."
+      },
+      {
+        "heading": "Pick a small, familiar goal",
+        "text": "Choose a goal that fits what you have already learned. Rather than promising to master a new technique in one visit, plan to repeat a familiar exercise under guidance and ask one clear question. Beginners may need to spend time on flat-ground movement or controlled stopping before progressing. An instructor can decide when to introduce a new activity. Do not use a generic online plan as a reason to move onto steeper terrain."
+      },
+      {
+        "heading": "Allocate time without making it a deadline",
+        "text": "Allow time for preparation, short blocks of practice, breaks and a final reflection. Ski Pro lets you choose between 20 and 120 minutes and returns a template with blocks that add up to your selected duration. Those minutes are an organizing aid. Lift queues, weather and fatigue can change the actual session. You can stop early or modify the plan with your instructor rather than trying to finish every block."
+      },
+      {
+        "heading": "Pause to check understanding",
+        "text": "Between activities, ask what the exercise was intended to help you notice. Describe what felt clear and what remained confusing. If a drill is unfamiliar, ask for an explanation before attempting it. Practising fewer activities with useful feedback can provide a clearer record than rushing through a long list. Keep speed controlled and remain on terrain that your instructor considers suitable."
+      },
+      {
+        "heading": "Close the loop in your journal",
+        "text": "Afterwards, record what happened: actual practice time, your effort rating and one observation. Note changes to the original plan. If you filmed a clip in a permitted location, write a question to discuss with your instructor instead of treating the recording as an automatic diagnosis. Choose a modest next step. Over time, your plans and reflections become a record of your learning process rather than a collection of unverified scores."
+      }
+    ]
+  }
+]
