@@ -19,3 +19,4 @@ pip install -r requirements.txt
 2. 启动后端服务
 uvicorn main:app --reload
 3. 打开html页面即可上传视频进行动作分析
+

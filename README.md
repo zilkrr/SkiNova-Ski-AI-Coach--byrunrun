@@ -1,5 +1,17 @@
 # Ski Pro / SkiNova — full-stack portfolio MVP
 
+## 项目速览 / Portfolio overview
+
+这是 SkiNova 滑雪课程原型的后续迭代作品，用于展示 AI 辅助产品开发、Python 数据处理和基础英文内容 / SEO 实践。
+
+- **原版（2026 年 6 月）**：[SkiNova 课程原型](https://github.com/zilkrr/SkiNova-Ski-AI-Coach-)；本仓库 `legacy/` 保留旧代码，供版本对照。
+- **本次升级（2026 年 10 月）**：FastAPI + SQLite，打通训练计划、练习日志、刷新恢复和 CSV 导出；补充视频文件检查、3 个英文内容样页、GSC 格式 CSV 指标分析及 9 项自动化测试。
+- **开发方式**：在原课程项目基础上，使用 Codex / Cursor 辅助需求整理、代码生成、调试和验证；本仓库代码及英文内容包含 AI 辅助产出。
+- **证据与边界**：视频功能检查文件及元数据；默认训练计划由规则生成，可选接入 Ollama。SEO 使用明确标注的合成示例，尚无真实搜索流量或排名增长结果。英文内容待本人编辑及专业审核。
+- **查看重点**：[SEO 案例说明](docs/SEO_CASE_STUDY.md) · [接口与演示步骤](docs/CURSOR_HANDOFF.md) · [功能测试](tests/test_app.py)。
+
+这是可在本地运行的源码作品，当前没有公网在线演示地址。下方提供安装、启动及验证步骤。
+
 A ski practice notebook with a same-origin web frontend, FastAPI backend and SQLite persistence. Built by extending the original SkiNova course prototype. The preserved original source is in `legacy/`.
 
 ## Start

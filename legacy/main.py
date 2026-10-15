@@ -422,3 +422,4 @@ async def recommend_coach(body: RecommendCoachRequest):
         "match_score": best_score,
         "reason": build_recommend_reason(best_coach, ski_type_cn, body.goal),
     }
+
